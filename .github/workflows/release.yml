@@ -61,6 +61,11 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_KEYCHAIN_PWD" build.keychain
           rm certificate.p12
 
+      # Rebuild native modules (required for DMG creation on macOS)
+      - name: Rebuild native modules
+        if: matrix.platform == 'darwin'
+        run: pnpm rebuild
+
       - name: Build distributables
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}

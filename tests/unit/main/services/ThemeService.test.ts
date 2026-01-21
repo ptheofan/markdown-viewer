@@ -13,17 +13,23 @@ import {
   resetThemeService,
 } from '@main/services/ThemeService';
 
+// Use a platform-agnostic mock path
+const MOCK_USER_DATA = path.join('mock', 'user', 'data');
+
 // Mock Electron modules
-vi.mock('electron', () => ({
-  nativeTheme: {
-    shouldUseDarkColors: false,
-    on: vi.fn(),
-    off: vi.fn(),
-  },
-  app: {
-    getPath: vi.fn(() => '/mock/user/data'),
-  },
-}));
+vi.mock('electron', async () => {
+  const pathModule = await import('path');
+  return {
+    nativeTheme: {
+      shouldUseDarkColors: false,
+      on: vi.fn(),
+      off: vi.fn(),
+    },
+    app: {
+      getPath: vi.fn(() => pathModule.join('mock', 'user', 'data')),
+    },
+  };
+});
 
 describe('ThemeService', () => {
   let tempDir: string;
@@ -52,13 +58,14 @@ describe('ThemeService', () => {
 
   describe('constructor', () => {
     it('should create service with custom preferences directory', () => {
-      const customService = createThemeService('/custom/path');
-      expect(customService.getPreferencesPath()).toBe('/custom/path/theme-preferences.json');
+      const customPath = path.join('custom', 'path');
+      const customService = createThemeService(customPath);
+      expect(customService.getPreferencesPath()).toBe(path.join(customPath, 'theme-preferences.json'));
     });
 
     it('should create service with default directory when not provided', () => {
       const defaultService = new ThemeService();
-      expect(defaultService.getPreferencesPath()).toBe('/mock/user/data/theme-preferences.json');
+      expect(defaultService.getPreferencesPath()).toBe(path.join(MOCK_USER_DATA, 'theme-preferences.json'));
     });
   });
 
@@ -260,7 +267,7 @@ describe('Singleton functions', () => {
 
     it('should create a new instance with default path', () => {
       const instance = getThemeService();
-      expect(instance.getPreferencesPath()).toBe('/mock/user/data/theme-preferences.json');
+      expect(instance.getPreferencesPath()).toBe(path.join(MOCK_USER_DATA, 'theme-preferences.json'));
     });
   });
 
@@ -276,12 +283,14 @@ describe('Singleton functions', () => {
 
   describe('createThemeService', () => {
     it('should create independent instances', () => {
-      const instance1 = createThemeService('/path/1');
-      const instance2 = createThemeService('/path/2');
+      const path1 = path.join('path', '1');
+      const path2 = path.join('path', '2');
+      const instance1 = createThemeService(path1);
+      const instance2 = createThemeService(path2);
 
       expect(instance1).not.toBe(instance2);
-      expect(instance1.getPreferencesPath()).toBe('/path/1/theme-preferences.json');
-      expect(instance2.getPreferencesPath()).toBe('/path/2/theme-preferences.json');
+      expect(instance1.getPreferencesPath()).toBe(path.join(path1, 'theme-preferences.json'));
+      expect(instance2.getPreferencesPath()).toBe(path.join(path2, 'theme-preferences.json'));
     });
   });
 });
