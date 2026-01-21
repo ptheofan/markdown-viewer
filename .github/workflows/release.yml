@@ -65,17 +65,19 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_KEYCHAIN_PWD" build.keychain
           rm certificate.p12
 
-      # Rebuild native modules (required for DMG creation on macOS)
-      - name: Rebuild native modules
-        if: matrix.platform == 'darwin'
-        run: pnpm rebuild
-
       - name: Build distributables
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: pnpm make
+        run: |
+          if [ "${{ matrix.platform }}" = "darwin" ]; then
+            # Skip DMG on CI due to native module issues, only build ZIP
+            pnpm make --targets @electron-forge/maker-zip
+          else
+            pnpm make
+          fi
+        shell: bash
 
       - name: List build artifacts
         run: |
@@ -84,13 +86,7 @@ jobs:
           find out/make -type f \( -name "*.dmg" -o -name "*.zip" -o -name "*.exe" -o -name "*.deb" -o -name "*.rpm" \) 2>/dev/null || true
         shell: bash
 
-      # Upload macOS artifacts
-      - name: Upload macOS DMG
-        if: matrix.platform == 'darwin'
-        uses: softprops/action-gh-release@v2
-        with:
-          files: out/make/*.dmg
-
+      # Upload macOS artifacts (ZIP only - DMG skipped due to native module issues in CI)
       - name: Upload macOS ZIP
         if: matrix.platform == 'darwin'
         uses: softprops/action-gh-release@v2
