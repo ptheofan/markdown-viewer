@@ -1,0 +1,111 @@
+name: Release
+
+on:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: darwin
+            arch: universal
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+          - os: windows-latest
+            platform: win32
+            arch: x64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: pnpm test
+
+      # macOS code signing (optional - requires secrets)
+      - name: Import macOS signing certificate
+        if: matrix.platform == 'darwin' && env.MACOS_CERTIFICATE != ''
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          MACOS_KEYCHAIN_PWD: ${{ secrets.MACOS_KEYCHAIN_PWD }}
+        run: |
+          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
+          security create-keychain -p "$MACOS_KEYCHAIN_PWD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$MACOS_KEYCHAIN_PWD" build.keychain
+          security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_KEYCHAIN_PWD" build.keychain
+          rm certificate.p12
+
+      - name: Build distributables
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: pnpm make
+
+      - name: List build artifacts
+        run: |
+          echo "Build artifacts:"
+          ls -la out/make/ || true
+          find out/make -type f \( -name "*.dmg" -o -name "*.zip" -o -name "*.exe" -o -name "*.deb" -o -name "*.rpm" \) 2>/dev/null || true
+        shell: bash
+
+      # Upload macOS artifacts
+      - name: Upload macOS DMG
+        if: matrix.platform == 'darwin'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/make/*.dmg
+
+      - name: Upload macOS ZIP
+        if: matrix.platform == 'darwin'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/make/zip/darwin/**/*.zip
+
+      # Upload Windows artifacts
+      - name: Upload Windows installer
+        if: matrix.platform == 'win32'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            out/make/squirrel.windows/**/*.exe
+            out/make/squirrel.windows/**/*.nupkg
+
+      # Upload Linux artifacts
+      - name: Upload Linux DEB
+        if: matrix.platform == 'linux'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/make/deb/x64/*.deb
+
+      - name: Upload Linux RPM
+        if: matrix.platform == 'linux'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/make/rpm/x64/*.rpm

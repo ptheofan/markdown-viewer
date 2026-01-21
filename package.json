@@ -1,0 +1,80 @@
+{
+  "name": "markdown-viewer",
+  "productName": "Markdown Viewer",
+  "version": "1.0.0",
+  "description": "A macOS desktop markdown viewer with GitHub-style rendering and plugin support",
+  "main": ".vite/build/index.js",
+  "private": true,
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "eslint --ext .ts,.tsx .",
+    "lint:fix": "eslint --ext .ts,.tsx . --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css,html}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css,html}\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "test:e2e": "playwright test",
+    "test:e2e:dev": "ELECTRON_DEV=1 playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "markdown",
+    "viewer",
+    "electron",
+    "desktop",
+    "macos"
+  ],
+  "author": {
+    "name": "Paris Theofanidis",
+    "email": "ptheofan@gmail.com"
+  },
+  "license": "GPL-3.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "electron-winstaller"
+    ]
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.11.1",
+    "@electron-forge/maker-deb": "^7.11.1",
+    "@electron-forge/maker-dmg": "^7.11.1",
+    "@electron-forge/maker-rpm": "^7.11.1",
+    "@electron-forge/maker-squirrel": "^7.11.1",
+    "@electron-forge/maker-zip": "^7.11.1",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.11.1",
+    "@electron-forge/plugin-fuses": "^7.11.1",
+    "@electron-forge/plugin-vite": "^7.11.1",
+    "@electron/fuses": "^1.8.0",
+    "@playwright/test": "^1.57.0",
+    "@types/electron-squirrel-startup": "^1.0.2",
+    "@types/markdown-it": "^14.1.2",
+    "@types/node": "^22.15.0",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
+    "@vitest/coverage-v8": "^3.0.0",
+    "@vitest/ui": "^3.0.0",
+    "electron": "40.0.0",
+    "electron-playwright-helpers": "^2.1.0",
+    "eslint": "^9.27.0",
+    "eslint-config-prettier": "^10.1.0",
+    "eslint-plugin-import": "^2.32.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3",
+    "vite": "^5.4.21",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "chokidar": "^4.0.0",
+    "electron-squirrel-startup": "^1.0.1",
+    "highlight.js": "^11.11.0",
+    "markdown-it": "^14.1.0",
+    "mermaid": "^11.6.0"
+  }
+}
