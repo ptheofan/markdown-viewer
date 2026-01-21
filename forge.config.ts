@@ -75,7 +75,7 @@ const config: ForgeConfig = {
     // Windows installer
     new MakerSquirrel({
       name: 'markdown-viewer',
-      iconUrl: 'https://raw.githubusercontent.com/aralu/markdown-viewer/main/resources/icons/icon.ico',
+      iconUrl: 'https://raw.githubusercontent.com/ptheofan/markdown-viewer/main/resources/icons/icon.ico',
       setupIcon: './resources/icons/icon.ico',
     }),
     // Linux packages
