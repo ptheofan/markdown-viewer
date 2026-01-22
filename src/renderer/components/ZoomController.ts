@@ -177,28 +177,27 @@ export class ZoomController {
 
   /**
    * Zoom to a specific point (used for pinch-to-zoom centering)
+   * With 'top center' transform origin, horizontal centering is automatic,
+   * so we only adjust vertical scroll to keep the pinch point stationary.
    */
-  private zoomToPoint(newZoom: number, pointX: number, pointY: number): void {
+  private zoomToPoint(newZoom: number, _pointX: number, pointY: number): void {
     const oldZoom = this.currentZoom;
     const zoomRatio = newZoom / oldZoom;
 
-    // Get current scroll position
-    const scrollLeft = this.scrollContainer.scrollLeft;
+    // Get current vertical scroll position
     const scrollTop = this.scrollContainer.scrollTop;
 
-    // Calculate the point in content coordinates before zoom
-    const contentX = scrollLeft + pointX;
+    // Calculate the Y point in content coordinates before zoom
     const contentY = scrollTop + pointY;
 
     // Apply the new zoom
     this.currentZoom = newZoom;
     this.applyZoom();
 
-    // Calculate new scroll position to keep the point under the cursor
-    const newScrollLeft = contentX * zoomRatio - pointX;
+    // Calculate new vertical scroll position to keep the point under the cursor
+    // Horizontal scroll not needed since 'top center' origin keeps content centered
     const newScrollTop = contentY * zoomRatio - pointY;
 
-    this.scrollContainer.scrollLeft = Math.max(0, newScrollLeft);
     this.scrollContainer.scrollTop = Math.max(0, newScrollTop);
 
     this.notifyZoomChange();
@@ -216,10 +215,7 @@ export class ZoomController {
    */
   private applyZoom(): void {
     this.targetElement.style.transform = `scale(${this.currentZoom})`;
-    this.targetElement.style.transformOrigin = 'top left';
-
-    // Adjust width to fit scaled content - this ensures scrollbars work correctly
-    this.targetElement.style.width = this.currentZoom === 1 ? '' : `${100 / this.currentZoom}%`;
+    this.targetElement.style.transformOrigin = 'top center';
   }
 
   /**
