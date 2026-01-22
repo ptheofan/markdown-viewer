@@ -26,7 +26,9 @@ const config: ForgeConfig = {
         }
       : undefined,
     // macOS notarization using App Store Connect API key
+    // Set SKIP_NOTARIZATION=1 to skip notarization (for testing signing only)
     osxNotarize:
+      !process.env['SKIP_NOTARIZATION'] &&
       process.env['APPLE_API_KEY_PATH'] &&
       process.env['APPLE_API_KEY_ID'] &&
       process.env['APPLE_API_ISSUER']

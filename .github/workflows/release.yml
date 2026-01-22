@@ -60,6 +60,8 @@ jobs:
           APPLE_API_KEY_PATH: ${{ env.APPLE_API_KEY_PATH }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          # TODO: Remove SKIP_NOTARIZATION once notarization is verified working
+          SKIP_NOTARIZATION: 1
         run: pnpm make
 
       - name: List build artifacts
