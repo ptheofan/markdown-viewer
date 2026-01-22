@@ -25,17 +25,12 @@ const config: ForgeConfig = {
           }),
         }
       : undefined,
-    // macOS notarization using app-specific password
+    // macOS notarization using keychain profile (credentials stored via xcrun notarytool store-credentials)
     // Set SKIP_NOTARIZATION=1 to skip notarization (for testing signing only)
     osxNotarize:
-      !process.env['SKIP_NOTARIZATION'] &&
-      process.env['APPLE_ID'] &&
-      process.env['APPLE_ID_PASSWORD'] &&
-      process.env['APPLE_TEAM_ID']
+      !process.env['SKIP_NOTARIZATION'] && process.env['NOTARIZE_KEYCHAIN_PROFILE']
         ? {
-            appleId: process.env['APPLE_ID'],
-            appleIdPassword: process.env['APPLE_ID_PASSWORD'],
-            teamId: process.env['APPLE_TEAM_ID'],
+            keychainProfile: process.env['NOTARIZE_KEYCHAIN_PROFILE'],
           }
         : undefined,
     // File associations for markdown files
