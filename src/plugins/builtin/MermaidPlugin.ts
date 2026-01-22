@@ -473,7 +473,7 @@ export class MermaidPlugin implements MarkdownPlugin {
     } else {
       // Use current theme background color
       const bgColor = getComputedStyle(document.documentElement)
-        .getPropertyValue('--bg-primary')
+        .getPropertyValue('--bg')
         .trim();
       backgroundColor = bgColor || '#ffffff';
     }
