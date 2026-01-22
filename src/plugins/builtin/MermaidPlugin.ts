@@ -240,7 +240,7 @@ export class MermaidPlugin implements MarkdownPlugin {
               label: 'Export Background',
               description: 'Background style when exporting diagrams as images',
               options: [
-                { value: 'solid', label: 'Solid White' },
+                { value: 'solid', label: 'Solid (Theme Background)' },
                 { value: 'transparent', label: 'Transparent' },
               ],
               defaultValue: DEFAULT_MERMAID_PREFERENCES.export.background,
@@ -467,10 +467,16 @@ export class MermaidPlugin implements MarkdownPlugin {
     const padding = 20;
 
     // Determine background color based on preferences
-    const backgroundColor =
-      this.preferences.export.background === 'transparent'
-        ? undefined
-        : 'white';
+    let backgroundColor: string | undefined;
+    if (this.preferences.export.background === 'transparent') {
+      backgroundColor = undefined;
+    } else {
+      // Use current theme background color
+      const bgColor = getComputedStyle(document.documentElement)
+        .getPropertyValue('--bg-primary')
+        .trim();
+      backgroundColor = bgColor || '#ffffff';
+    }
 
     const dataUrl = await toPng(svg as unknown as HTMLElement, {
       backgroundColor,
