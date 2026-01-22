@@ -15,31 +15,27 @@ const config: ForgeConfig = {
     asar: true,
     icon: './resources/icons/icon',
     extraResource: ['./resources/bin'],
-    // macOS code signing - TEMPORARILY DISABLED to test packaging
-    osxSign: undefined,
-    // osxSign: process.env['APPLE_API_KEY_PATH']
-    //   ? {
-    //       identity: process.env['APPLE_SIGNING_IDENTITY'] || 'Developer ID Application',
-    //       keychain: process.env['KEYCHAIN_PATH'],
-    //       optionsForFile: () => ({
-    //         entitlements: './resources/entitlements.mac.plist',
-    //         hardenedRuntime: true,
-    //       }),
-    //     }
-    //   : undefined,
+    // macOS code signing - enabled when APPLE_API_KEY_PATH is set
+    osxSign: process.env['APPLE_API_KEY_PATH']
+      ? {
+          identity: 'Developer ID Application',
+          optionsForFile: () => ({
+            entitlements: './resources/entitlements.mac.plist',
+            hardenedRuntime: true,
+          }),
+        }
+      : undefined,
     // macOS notarization using App Store Connect API key
-    // TEMPORARILY DISABLED to isolate signing vs notarization issue
-    osxNotarize: undefined,
-    // osxNotarize:
-    //   process.env['APPLE_API_KEY_PATH'] &&
-    //   process.env['APPLE_API_KEY_ID'] &&
-    //   process.env['APPLE_API_ISSUER']
-    //     ? {
-    //         appleApiKey: process.env['APPLE_API_KEY_PATH'],
-    //         appleApiKeyId: process.env['APPLE_API_KEY_ID'],
-    //         appleApiIssuer: process.env['APPLE_API_ISSUER'],
-    //       }
-    //     : undefined,
+    osxNotarize:
+      process.env['APPLE_API_KEY_PATH'] &&
+      process.env['APPLE_API_KEY_ID'] &&
+      process.env['APPLE_API_ISSUER']
+        ? {
+            appleApiKey: process.env['APPLE_API_KEY_PATH'],
+            appleApiKeyId: process.env['APPLE_API_KEY_ID'],
+            appleApiIssuer: process.env['APPLE_API_ISSUER'],
+          }
+        : undefined,
     // File associations for markdown files
     protocols: [
       {
@@ -112,20 +108,20 @@ const config: ForgeConfig = {
         },
       ],
     }),
-    // Security hardening - TEMPORARILY DISABLED
-    // ...(process.env['APPLE_API_KEY_PATH']
-    //   ? [
-    //       new FusesPlugin({
-    //         version: FuseVersion.V1,
-    //         [FuseV1Options.RunAsNode]: false,
-    //         [FuseV1Options.EnableCookieEncryption]: true,
-    //         [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
-    //         [FuseV1Options.EnableNodeCliInspectArguments]: false,
-    //         [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
-    //         [FuseV1Options.OnlyLoadAppFromAsar]: true,
-    //       }),
-    //     ]
-    //   : []),
+    // Security hardening fuses - enabled in CI for release builds
+    ...(process.env['CI']
+      ? [
+          new FusesPlugin({
+            version: FuseVersion.V1,
+            [FuseV1Options.RunAsNode]: false,
+            [FuseV1Options.EnableCookieEncryption]: true,
+            [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
+            [FuseV1Options.EnableNodeCliInspectArguments]: false,
+            [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
+            [FuseV1Options.OnlyLoadAppFromAsar]: true,
+          }),
+        ]
+      : []),
   ],
 };
 
