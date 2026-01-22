@@ -12,6 +12,7 @@ const config: ForgeConfig = {
     appCategoryType: 'public.app-category.developer-tools',
     asar: true,
     icon: './resources/icons/icon',
+    extraResource: ['./resources/bin'],
     // macOS specific options - signing is configured via environment variables
     // Set APPLE_ID, APPLE_PASSWORD, and APPLE_TEAM_ID for notarization
     osxSign: process.env['APPLE_ID']

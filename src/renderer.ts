@@ -37,6 +37,7 @@ import type {
   AppPreferences,
   DeepPartial,
   CorePreferences,
+  ExternalFileOpenEvent,
 } from '@shared/types';
 import type { ResolvedTheme } from './themes/types';
 
@@ -318,6 +319,14 @@ class App {
       }
     );
     this.cleanupFunctions.push(cleanupFullscreenChange);
+
+    // External file open listener (from Finder, command line)
+    const cleanupExternalOpen = window.electronAPI.fileAssociation.onExternalOpen(
+      (event: ExternalFileOpenEvent) => {
+        void this.loadFile(event.filePath);
+      }
+    );
+    this.cleanupFunctions.push(cleanupExternalOpen);
   }
 
   /**

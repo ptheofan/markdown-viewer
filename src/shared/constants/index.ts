@@ -1,7 +1,7 @@
 /**
  * Supported file extensions for markdown files
  */
-export const MARKDOWN_EXTENSIONS = ['.md', '.markdown', '.mdown', '.mkd'] as const;
+export const MARKDOWN_EXTENSIONS = ['.md', '.markdown', '.mdown', '.mkdn', '.mkd'] as const;
 
 /**
  * Default debounce time for file watching (ms)

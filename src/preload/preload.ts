@@ -20,6 +20,9 @@ import type {
   SaveFileResult,
   AppPreferences,
   DeepPartial,
+  FileAssociationStatus,
+  FileAssociationResult,
+  ExternalFileOpenEvent,
 } from '@shared/types';
 
 /**
@@ -213,6 +216,37 @@ const electronAPI: ElectronAPI = {
       // Return cleanup function
       return () => {
         ipcRenderer.removeListener(IPC_CHANNELS.PREFERENCES.ON_CHANGE, handler);
+      };
+    },
+  },
+
+  fileAssociation: {
+    getStatus: (): Promise<FileAssociationStatus> => {
+      return ipcRenderer.invoke(IPC_CHANNELS.FILE_ASSOCIATION.GET_STATUS);
+    },
+
+    setAsDefault: (): Promise<FileAssociationResult> => {
+      return ipcRenderer.invoke(IPC_CHANNELS.FILE_ASSOCIATION.SET_AS_DEFAULT);
+    },
+
+    onExternalOpen: (
+      callback: (event: ExternalFileOpenEvent) => void
+    ): (() => void) => {
+      const handler = (
+        _event: Electron.IpcRendererEvent,
+        data: ExternalFileOpenEvent
+      ): void => {
+        callback(data);
+      };
+
+      ipcRenderer.on(IPC_CHANNELS.FILE_ASSOCIATION.ON_EXTERNAL_OPEN, handler);
+
+      // Return cleanup function
+      return () => {
+        ipcRenderer.removeListener(
+          IPC_CHANNELS.FILE_ASSOCIATION.ON_EXTERNAL_OPEN,
+          handler
+        );
       };
     },
   },

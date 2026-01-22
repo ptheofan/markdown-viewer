@@ -15,6 +15,10 @@ import {
   registerPreferencesHandlers,
   unregisterPreferencesHandlers,
 } from './PreferencesHandler';
+import {
+  registerFileAssociationHandlers,
+  unregisterFileAssociationHandlers,
+} from './FileAssociationHandler';
 
 /**
  * Register all IPC handlers
@@ -25,6 +29,7 @@ export function registerAllHandlers(): void {
   registerClipboardHandlers();
   registerContextMenuHandlers();
   registerPreferencesHandlers();
+  registerFileAssociationHandlers();
 }
 
 /**
@@ -36,6 +41,7 @@ export function unregisterAllHandlers(): void {
   unregisterClipboardHandlers();
   unregisterContextMenuHandlers();
   unregisterPreferencesHandlers();
+  unregisterFileAssociationHandlers();
 }
 
 // Re-export individual handlers
@@ -53,3 +59,7 @@ export {
   registerPreferencesHandlers,
   unregisterPreferencesHandlers,
 } from './PreferencesHandler';
+export {
+  registerFileAssociationHandlers,
+  unregisterFileAssociationHandlers,
+} from './FileAssociationHandler';

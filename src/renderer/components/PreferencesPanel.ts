@@ -8,6 +8,7 @@ import type {
   PluginPreferencesSchema,
   PreferenceField,
   ColorPair,
+  FileAssociationStatus,
 } from '@shared/types';
 import { CollapsibleSection } from './CollapsibleSection';
 import { Select, Toggle, NumberInput, TextInput } from './FormControls';
@@ -177,9 +178,99 @@ export class PreferencesPanel {
 
     if (!this.currentPreferences) return;
 
+    void this.renderSystemSection();
     this.renderAppearanceSection();
     this.renderTypographySection();
     this.renderPluginSections();
+  }
+
+  /**
+   * Render the System section with file association settings
+   */
+  private async renderSystemSection(): Promise<void> {
+    const section = new CollapsibleSection({
+      title: 'System',
+      initiallyOpen: true,
+    });
+
+    const fields: HTMLElement[] = [];
+
+    // File association field
+    const fieldWrapper = document.createElement('div');
+    fieldWrapper.className = 'form-field form-field-action';
+
+    // Fetch current status
+    let status: FileAssociationStatus;
+    try {
+      status = await window.electronAPI.fileAssociation.getStatus();
+    } catch {
+      status = { canSetDefault: false, isDefault: false };
+    }
+
+    const canSet = status.canSetDefault;
+    const isDefault = status.isDefault;
+
+    fieldWrapper.innerHTML = `
+      <label class="form-label">Default Application</label>
+      <p class="form-description">Set Markdown Viewer as the default app for .md, .markdown, .mdown, .mkdn, and .mkd files.</p>
+      <div class="action-button-row">
+        <button class="action-button" type="button" ${!canSet || isDefault ? 'disabled' : ''}>
+          ${isDefault ? 'Already Default' : 'Set as Default'}
+        </button>
+        <span class="action-button-status ${isDefault ? 'status-success' : !canSet ? 'status-info' : ''}">
+          ${isDefault ? '✓ Already set' : !canSet ? 'Only available in packaged app' : ''}
+        </span>
+      </div>
+    `;
+
+    const button = fieldWrapper.querySelector('.action-button') as HTMLButtonElement;
+    const statusEl = fieldWrapper.querySelector('.action-button-status') as HTMLElement;
+
+    if (canSet && !isDefault) {
+      button.addEventListener('click', () => {
+        void (async () => {
+        button.disabled = true;
+        button.textContent = 'Setting...';
+        statusEl.textContent = '';
+        statusEl.className = 'action-button-status';
+
+        try {
+          const result = await window.electronAPI.fileAssociation.setAsDefault();
+
+          if (result.success) {
+            statusEl.textContent = '✓ Successfully set';
+            statusEl.className = 'action-button-status status-success';
+            button.textContent = 'Already Default';
+          } else {
+            const errorMessages: Record<string, string> = {
+              NOT_SUPPORTED: 'Not supported on this platform',
+              NOT_PACKAGED: 'Only available in packaged app',
+              PERMISSION_DENIED: 'Permission denied',
+              DUTI_NOT_FOUND: 'Configuration tool not found',
+              UNKNOWN: 'An error occurred',
+            };
+            statusEl.textContent = errorMessages[result.error ?? 'UNKNOWN'] ?? 'Failed';
+            statusEl.className = 'action-button-status status-error';
+            button.disabled = false;
+            button.textContent = 'Set as Default';
+          }
+        } catch {
+          statusEl.textContent = 'An error occurred';
+          statusEl.className = 'action-button-status status-error';
+          button.disabled = false;
+          button.textContent = 'Set as Default';
+        }
+        })();
+      });
+    }
+
+    fields.push(fieldWrapper);
+
+    section.setContent(fields);
+    this.sectionsContainer.insertBefore(
+      section.getElement(),
+      this.sectionsContainer.firstChild
+    );
   }
 
   /**

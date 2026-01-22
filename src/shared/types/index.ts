@@ -63,9 +63,18 @@ export type {
   ContextMenuAPI,
   ClipboardAPI,
   PreferencesAPI,
+  FileAssociationAPI,
   ElectronAPI,
   FullscreenChangeEvent,
   ContextMenuItem,
   ContextMenuShowRequest,
   SaveFileResult,
 } from './api';
+
+// File association types
+export type {
+  FileAssociationErrorCode,
+  FileAssociationResult,
+  FileAssociationStatus,
+  ExternalFileOpenEvent,
+} from './fileAssociation';

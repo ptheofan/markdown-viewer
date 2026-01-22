@@ -45,3 +45,6 @@ export {
   ImageCaptureError,
   ClipboardWriteError,
 } from './DocumentCopyError';
+
+// File association errors
+export { FileAssociationError } from './FileAssociationError';

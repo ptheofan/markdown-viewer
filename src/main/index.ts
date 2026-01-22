@@ -2,11 +2,54 @@
  * Main process entry point
  */
 import { app, BrowserWindow } from 'electron';
+import path from 'node:path';
 
 import { registerAllHandlers } from './ipc/handlers';
 import { getThemeService } from './services/ThemeService';
 import { getPreferencesService } from './services/PreferencesService';
 import { getMainWindow } from './window/MainWindow';
+import { getFileService } from './services/FileService';
+import { IPC_CHANNELS } from '@shared/types';
+import { MARKDOWN_EXTENSIONS } from '@shared/constants';
+
+/**
+ * Pending file path for files opened before window is ready
+ */
+let pendingFilePath: string | null = null;
+
+/**
+ * Check command-line arguments for markdown file
+ */
+function checkCommandLineArgs(): void {
+  // Skip the first args (electron path, app path in dev, or just app path in prod)
+  const args = process.argv.slice(app.isPackaged ? 1 : 2);
+
+  const filePath = args.find((arg) => {
+    if (arg.startsWith('-')) return false;
+    const ext = path.extname(arg).toLowerCase();
+    return (MARKDOWN_EXTENSIONS as readonly string[]).includes(ext);
+  });
+
+  if (filePath) {
+    // Resolve to absolute path if needed
+    pendingFilePath = path.isAbsolute(filePath)
+      ? filePath
+      : path.resolve(filePath);
+  }
+}
+
+/**
+ * Send pending file to renderer when ready
+ */
+function sendPendingFile(): void {
+  const mainWindow = getMainWindow();
+  if (pendingFilePath && mainWindow.exists()) {
+    mainWindow.send(IPC_CHANNELS.FILE_ASSOCIATION.ON_EXTERNAL_OPEN, {
+      filePath: pendingFilePath,
+    });
+    pendingFilePath = null;
+  }
+}
 
 /**
  * Create application window
@@ -25,6 +68,9 @@ function createWindow(): void {
  * Initialize application
  */
 async function initialize(): Promise<void> {
+  // Check for file argument in command line
+  checkCommandLineArgs();
+
   // Initialize services
   await getThemeService().initialize();
   await getPreferencesService().initialize();
@@ -34,9 +80,37 @@ async function initialize(): Promise<void> {
 
   // Create window when ready
   createWindow();
+
+  // Send pending file after a short delay to ensure renderer is ready
+  if (pendingFilePath) {
+    setTimeout(sendPendingFile, 500);
+  }
 }
 
 // Electron app lifecycle events
+
+// macOS: Handle file open events (can fire before app is ready)
+app.on('open-file', (event, filePath) => {
+  event.preventDefault();
+
+  // Validate it's a markdown file
+  const ext = path.extname(filePath).toLowerCase();
+  const fileService = getFileService();
+  if (!fileService.isMarkdownFile(ext)) {
+    return;
+  }
+
+  const mainWindow = getMainWindow();
+  if (mainWindow.exists()) {
+    // Window exists, send immediately
+    mainWindow.send(IPC_CHANNELS.FILE_ASSOCIATION.ON_EXTERNAL_OPEN, {
+      filePath,
+    });
+  } else {
+    // Store for later
+    pendingFilePath = filePath;
+  }
+});
 
 app.whenReady()
   .then(() => {

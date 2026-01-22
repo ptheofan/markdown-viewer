@@ -6,6 +6,11 @@ import type {
 } from './file';
 import type { ThemeMode, ResolvedTheme, ThemeChangeEvent } from './theme';
 import type { AppPreferences, DeepPartial } from './preferences';
+import type {
+  FileAssociationStatus,
+  FileAssociationResult,
+  ExternalFileOpenEvent,
+} from './fileAssociation';
 
 /**
  * IPC Channel names for type-safe communication
@@ -50,6 +55,11 @@ export const IPC_CHANNELS = {
     SET_PLUGIN: 'preferences:set-plugin',
     ON_CHANGE: 'preferences:on-change',
   },
+  FILE_ASSOCIATION: {
+    GET_STATUS: 'file-association:get-status',
+    SET_AS_DEFAULT: 'file-association:set-as-default',
+    ON_EXTERNAL_OPEN: 'file-association:on-external-open',
+  },
 } as const;
 
 /**
@@ -62,7 +72,8 @@ export type IpcChannel =
   | (typeof IPC_CHANNELS.WINDOW)[keyof typeof IPC_CHANNELS.WINDOW]
   | (typeof IPC_CHANNELS.CONTEXT_MENU)[keyof typeof IPC_CHANNELS.CONTEXT_MENU]
   | (typeof IPC_CHANNELS.CLIPBOARD)[keyof typeof IPC_CHANNELS.CLIPBOARD]
-  | (typeof IPC_CHANNELS.PREFERENCES)[keyof typeof IPC_CHANNELS.PREFERENCES];
+  | (typeof IPC_CHANNELS.PREFERENCES)[keyof typeof IPC_CHANNELS.PREFERENCES]
+  | (typeof IPC_CHANNELS.FILE_ASSOCIATION)[keyof typeof IPC_CHANNELS.FILE_ASSOCIATION];
 
 /**
  * Fullscreen change event data
@@ -175,6 +186,17 @@ export interface PreferencesAPI {
 }
 
 /**
+ * File association API exposed to renderer
+ */
+export interface FileAssociationAPI {
+  getStatus: () => Promise<FileAssociationStatus>;
+  setAsDefault: () => Promise<FileAssociationResult>;
+  onExternalOpen: (
+    callback: (event: ExternalFileOpenEvent) => void
+  ) => () => void;
+}
+
+/**
  * Complete Electron API exposed via contextBridge
  */
 export interface ElectronAPI {
@@ -185,6 +207,7 @@ export interface ElectronAPI {
   contextMenu: ContextMenuAPI;
   clipboard: ClipboardAPI;
   preferences: PreferencesAPI;
+  fileAssociation: FileAssociationAPI;
 }
 
 /**
