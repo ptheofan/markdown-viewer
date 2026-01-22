@@ -462,33 +462,118 @@ export class MermaidPlugin implements MarkdownPlugin {
       throw new Error('SVG element not found');
     }
 
-    // Get bounding box and add padding to prevent cropping
-    const bbox = svg.getBoundingClientRect();
-    const padding = 20;
+    const padding = 40; // Final padding around content (will be halved due to pixelRatio)
 
     // Determine background color based on preferences
-    let backgroundColor: string | undefined;
+    let backgroundColor: string;
     if (this.preferences.export.background === 'transparent') {
-      backgroundColor = undefined;
+      backgroundColor = 'rgba(0,0,0,0)';
     } else {
-      // Use current theme background color
       const bgColor = getComputedStyle(document.documentElement)
         .getPropertyValue('--bg')
         .trim();
       backgroundColor = bgColor || '#ffffff';
     }
 
+    // First, capture the SVG to a canvas
     const dataUrl = await toPng(svg as unknown as HTMLElement, {
-      backgroundColor,
-      pixelRatio: 2, // Retina quality
-      width: Math.ceil(bbox.width) + padding * 2,
-      height: Math.ceil(bbox.height) + padding * 2,
-      style: {
-        margin: `${padding}px`,
-      },
+      pixelRatio: 2,
     });
 
-    return dataUrl.split(',')[1] ?? '';
+    // Load as image to get pixel data
+    const img = await this.loadImage(dataUrl);
+
+    // Create canvas to analyze pixels
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(img, 0, 0);
+
+    // Find content bounds by scanning for non-transparent pixels
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const bounds = this.findContentBounds(imageData);
+
+    if (!bounds) {
+      // No content found, return original
+      return dataUrl.split(',')[1] ?? '';
+    }
+
+    // Create final canvas with padding
+    const finalWidth = bounds.width + padding * 2;
+    const finalHeight = bounds.height + padding * 2;
+
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = finalWidth;
+    finalCanvas.height = finalHeight;
+    const finalCtx = finalCanvas.getContext('2d')!;
+
+    // Fill with background color
+    finalCtx.fillStyle = backgroundColor;
+    finalCtx.fillRect(0, 0, finalWidth, finalHeight);
+
+    // Draw cropped content centered
+    finalCtx.drawImage(
+      canvas,
+      bounds.x, bounds.y, bounds.width, bounds.height,
+      padding, padding, bounds.width, bounds.height
+    );
+
+    // Export as PNG
+    const finalDataUrl = finalCanvas.toDataURL('image/png');
+    return finalDataUrl.split(',')[1] ?? '';
+  }
+
+  /**
+   * Load an image from a data URL
+   */
+  private loadImage(dataUrl: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+  }
+
+  /**
+   * Find the bounding box of non-transparent content in an image
+   */
+  private findContentBounds(imageData: ImageData): { x: number; y: number; width: number; height: number } | null {
+    const { data, width, height } = imageData;
+
+    let minX = width;
+    let minY = height;
+    let maxX = 0;
+    let maxY = 0;
+    let hasContent = false;
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4;
+        const alpha = data[i + 3];
+
+        // Consider pixel as content if it has any opacity
+        if (alpha !== undefined && alpha > 0) {
+          hasContent = true;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+
+    if (!hasContent) {
+      return null;
+    }
+
+    return {
+      x: minX,
+      y: minY,
+      width: maxX - minX + 1,
+      height: maxY - minY + 1,
+    };
   }
 
   /**
