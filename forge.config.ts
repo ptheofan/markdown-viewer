@@ -2,6 +2,7 @@ import type { ForgeConfig } from '@electron-forge/shared-types';
 import { MakerZIP } from '@electron-forge/maker-zip';
 import { MakerDMG } from '@electron-forge/maker-dmg';
 import { VitePlugin } from '@electron-forge/plugin-vite';
+import { execSync } from 'child_process';
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -60,6 +61,19 @@ const config: ForgeConfig = {
     },
   },
   rebuildConfig: {},
+  hooks: {
+    postPackage: async (_config, packageResult) => {
+      // Re-sign the app with ad-hoc signature to fix "app is damaged" error
+      // This is needed because Electron's default linker signature doesn't include
+      // all nested frameworks, causing Gatekeeper to reject the app
+      if (process.platform === 'darwin' && !process.env['APPLE_ID']) {
+        const outputDir = packageResult.outputPaths[0];
+        const appPath = `${outputDir}/Markdown Viewer.app`;
+        console.log(`Re-signing app with ad-hoc signature: ${appPath}`);
+        execSync(`codesign --force --deep --sign - "${appPath}"`, { stdio: 'inherit' });
+      }
+    },
+  },
   makers: [
     // macOS DMG installer
     new MakerDMG({
