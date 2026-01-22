@@ -26,16 +26,18 @@ const config: ForgeConfig = {
         }
       : undefined,
     // macOS notarization using App Store Connect API key
-    osxNotarize:
-      process.env['APPLE_API_KEY_PATH'] &&
-      process.env['APPLE_API_KEY_ID'] &&
-      process.env['APPLE_API_ISSUER']
-        ? {
-            appleApiKey: process.env['APPLE_API_KEY_PATH'],
-            appleApiKeyId: process.env['APPLE_API_KEY_ID'],
-            appleApiIssuer: process.env['APPLE_API_ISSUER'],
-          }
-        : undefined,
+    // TEMPORARILY DISABLED to isolate signing vs notarization issue
+    osxNotarize: undefined,
+    // osxNotarize:
+    //   process.env['APPLE_API_KEY_PATH'] &&
+    //   process.env['APPLE_API_KEY_ID'] &&
+    //   process.env['APPLE_API_ISSUER']
+    //     ? {
+    //         appleApiKey: process.env['APPLE_API_KEY_PATH'],
+    //         appleApiKeyId: process.env['APPLE_API_KEY_ID'],
+    //         appleApiIssuer: process.env['APPLE_API_ISSUER'],
+    //       }
+    //     : undefined,
     // File associations for markdown files
     protocols: [
       {
